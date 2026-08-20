@@ -1,0 +1,10 @@
+backup/
+Work/
+scripts/geo-ui/backend/vendor/
+scripts/geo-ui/frontend/node_modules/
+scripts/geo-ui/frontend/dist/
+scripts/geo-ui/.pytest_cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+

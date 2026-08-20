@@ -1,0 +1,8 @@
+Package: geo-route
+Version: 0.1.0
+Depends: python3, dnsmasq-full, ipset, iptables, curl, jq, ca-bundle, cron
+Section: net
+Architecture: aarch64-3.10
+Maintainer: geo-route
+Priority: optional
+Description: Keenetic geo routing: geosite/geoip updater, ipset policy and LAN web UI

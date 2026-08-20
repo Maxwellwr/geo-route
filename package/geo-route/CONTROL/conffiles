@@ -1,0 +1,4 @@
+/opt/etc/geo/common.conf
+/opt/etc/geo/geo.d/custom.conf
+/opt/etc/geo/geo.d/geosite.conf
+/opt/etc/geo/geo.d/geoip.conf

@@ -1,0 +1,8 @@
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.conf text eol=lf
+package/geo-route/CONTROL/postinst text eol=lf
+package/geo-route/CONTROL/prerm text eol=lf
+package/geo-route/CONTROL/control text eol=lf
+package/geo-route/CONTROL/conffiles text eol=lf

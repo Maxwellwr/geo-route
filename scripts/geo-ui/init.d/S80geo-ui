@@ -1,0 +1,22 @@
+#!/bin/sh
+# ENABLED=yes
+
+ENABLED=yes
+PROCS=python3
+ARGS="/opt/share/geo-routing/backend/run.py"
+PREARGS=""
+PRECMD="cd /opt/share/geo-routing/backend"
+DESC="geo-ui"
+PATH=/opt/sbin:/opt/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+BACKEND=/opt/share/geo-routing/backend
+export GEO_DIR=/opt/etc/geo
+export GEO_VAR=/opt/var/geo
+export GEO_UI_DIST=/opt/share/geo-routing/frontend/dist
+export PYTHONPATH="$BACKEND${PYTHONPATH:+:$PYTHONPATH}"
+if [ -d "$BACKEND/vendor" ]; then
+    PYTHONPATH="$BACKEND/vendor:$PYTHONPATH"
+    export PYTHONPATH
+fi
+
+. /opt/etc/init.d/rc.func
