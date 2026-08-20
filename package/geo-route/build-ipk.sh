@@ -73,10 +73,6 @@ mkdir -p "$STAGE/opt/etc/geo/geo.d" \
          "$STAGE/opt/etc/ndm/netfilter.d"
 install -m 644 "$ROOT/scripts/geo/common.conf" "$STAGE/opt/etc/geo/common.conf"
 lf "$STAGE/opt/etc/geo/common.conf"
-for conf in custom geosite geoip; do
-    install -m 644 "$ROOT/scripts/geo/geo.d/${conf}.conf" "$STAGE/opt/etc/geo/geo.d/${conf}.conf"
-    lf "$STAGE/opt/etc/geo/geo.d/${conf}.conf"
-done
 install -m 755 "$ROOT/scripts/geo-ui/init.d/S80geo-ui" "$STAGE/opt/etc/init.d/S80geo-ui"
 install -m 755 "$ROOT/scripts/geo/cron.weekly/geo-update" "$STAGE/opt/etc/cron.weekly/geo-update"
 install -m 755 "$ROOT/scripts/geo/10-geo-routing.sh" "$STAGE/opt/etc/ndm/netfilter.d/10-geo-routing.sh"
