@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
-VERSION="${GEO_ROUTE_VERSION:-0.1.0}"
+VERSION="${GEO_ROUTE_VERSION:-$(sed -n 's/^Version:[[:space:]]*//p' "$PKG_DIR/CONTROL/control")}"
 ARCH="aarch64-3.10"
 NAME="geo-route"
 STAGE="$ROOT/Work/ipk-stage"
@@ -74,9 +74,11 @@ mkdir -p "$STAGE/opt/etc/geo/geo.d" \
 install -m 644 "$ROOT/scripts/geo/common.conf" "$STAGE/opt/etc/geo/common.conf"
 lf "$STAGE/opt/etc/geo/common.conf"
 install -m 755 "$ROOT/scripts/geo-ui/init.d/S80geo-ui" "$STAGE/opt/etc/init.d/S80geo-ui"
+install -m 755 "$PKG_DIR/files/S05wget-https" "$STAGE/opt/etc/init.d/S05wget-https"
 install -m 755 "$ROOT/scripts/geo/cron.weekly/geo-update" "$STAGE/opt/etc/cron.weekly/geo-update"
 install -m 755 "$ROOT/scripts/geo/10-geo-routing.sh" "$STAGE/opt/etc/ndm/netfilter.d/10-geo-routing.sh"
 lf "$STAGE/opt/etc/init.d/S80geo-ui"
+lf "$STAGE/opt/etc/init.d/S05wget-https"
 lf "$STAGE/opt/etc/cron.weekly/geo-update"
 lf "$STAGE/opt/etc/ndm/netfilter.d/10-geo-routing.sh"
 

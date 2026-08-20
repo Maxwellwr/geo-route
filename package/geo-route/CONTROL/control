@@ -1,6 +1,6 @@
 Package: geo-route
-Version: 0.1.0
-Depends: python3, dnsmasq-full, ipset, iptables, curl, jq, ca-bundle, cron
+Version: 0.1.1
+Depends: python3, dnsmasq-full, ipset, iptables, curl, jq, ca-bundle, cron, wget-ssl
 Section: net
 Architecture: aarch64-3.10
 Maintainer: geo-route

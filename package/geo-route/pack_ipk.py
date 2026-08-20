@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 EXEC_SUFFIXES = {".sh"}
-EXEC_NAMES = {"geo-update", "geo-why", "geoview", "configure.sh", "S80geo-ui", "postinst", "prerm"}
+EXEC_NAMES = {"geo-update", "geo-why", "geoview", "configure.sh", "S80geo-ui", "S05wget-https", "postinst", "prerm"}
 
 
 def is_exec(path: Path) -> bool:

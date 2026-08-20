@@ -1,0 +1,5 @@
+#!/bin/sh
+# Keenetic SSH не логин-шелл: /opt/etc/profile не читается, в PATH первым
+# идёт busybox wget без HTTPS. GNU wget-ssl должен быть `wget`.
+[ -x /opt/libexec/wget-ssl ] && ln -sf /opt/libexec/wget-ssl /opt/usr/bin/wget
+exit 0

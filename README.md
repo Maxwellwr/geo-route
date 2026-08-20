@@ -4,26 +4,26 @@ Geo-маршрутизация: geosite/geoip → ipset/dnsmasq, веб-UI на 
 
 Официальный feed Entware этот ipk не содержит. Нужен свой.
 
-BusyBox `wget` на Keenetic не умеет HTTPS (GitHub Pages только https). SSH-сессия **не** подхватывает `/opt/etc/profile`, поэтому в PATH первым идёт `/opt/usr/bin/wget` → busybox.
+BusyBox `wget` не умеет HTTPS. Один раз (пакет `wget-ssl` ставится с HTTP-репозитория Entware):
 
 ```
 opkg install wget-ssl
-. /opt/etc/profile
+ln -sf /opt/libexec/wget-ssl /opt/usr/bin/wget
 echo 'src/gz geo-route https://maxwellwr.github.io/geo-route/aarch64-3.10' >> /opt/etc/opkg.conf
 opkg update
 opkg install geo-route
 ```
 
-Дальше в той же сессии (или снова `. /opt/etc/profile`): `opkg update && opkg upgrade geo-route`.
+Дальше: `opkg update && opkg upgrade geo-route`. Профиль (`/opt/etc/profile`) не нужен: `wget` в `/opt/usr/bin` указывает на wget-ssl.
 
 Без строки `src/gz` `opkg install geo-route` пакет не найдёт.
 
 Локально, без feed:
 
 ```
-opkg install ./geo-route_0.1.0_aarch64-3.10.ipk
+opkg install ./geo-route_0.1.1_aarch64-3.10.ipk
 ```
 
-Сборка ipk: `package/geo-route/build-ipk.sh` → `Work/geo-route_0.1.0_aarch64-3.10.ipk` и `Work/feed/aarch64-3.10/`.
+Сборка ipk: `package/geo-route/build-ipk.sh` → `Work/geo-route_*_aarch64-3.10.ipk` и `Work/feed/aarch64-3.10/`.
 
-Релиз: тег `v0.1.0` (GitHub Actions собирает ipk и выкладывает feed в Pages). В настройках репозитория: Pages → Source = GitHub Actions.
+Релиз: тег `v*` (GitHub Actions собирает ipk и выкладывает feed в Pages). В настройках репозитория: Pages → Source = GitHub Actions.

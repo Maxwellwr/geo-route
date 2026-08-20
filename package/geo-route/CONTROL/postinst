@@ -20,8 +20,11 @@ fi
 chmod 755 /opt/bin/geo-update /opt/bin/geo-why /opt/bin/geoview \
     /opt/share/geo-routing/configure.sh \
     /opt/etc/init.d/S80geo-ui \
+    /opt/etc/init.d/S05wget-https \
     /opt/etc/cron.weekly/geo-update \
     /opt/etc/ndm/netfilter.d/10-geo-routing.sh 2>/dev/null || true
+
+[ -x /opt/libexec/wget-ssl ] && ln -sf /opt/libexec/wget-ssl /opt/usr/bin/wget
 
 /opt/etc/init.d/S80geo-ui start >/dev/null 2>&1 || true
 exit 0
