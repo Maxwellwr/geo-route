@@ -31,7 +31,13 @@ rm -rf "$STAGE" "$CTRL"
 mkdir -p "$STAGE" "$CTRL" "$FEED"
 
 echo "== frontend =="
-(cd "$ROOT/scripts/geo-ui/frontend" && npm run build)
+(
+    cd "$ROOT/scripts/geo-ui/frontend"
+    if [ ! -d node_modules ]; then
+        npm ci
+    fi
+    npm run build
+)
 
 echo "== flask vendor =="
 VENDOR="$STAGE/opt/share/geo-routing/backend/vendor"

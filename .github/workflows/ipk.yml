@@ -26,6 +26,7 @@ jobs:
       - name: Build ipk
         run: |
           chmod +x package/geo-route/build-ipk.sh
+          npm ci --prefix scripts/geo-ui/frontend
           ./package/geo-route/build-ipk.sh
       - name: Upload feed
         uses: actions/upload-pages-artifact@v3
