@@ -30,6 +30,7 @@ jobs:
           npm ci --prefix scripts/geo-ui/frontend
           ./package/geo-route/build-ipk.sh
       - name: Upload feed
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: Work/feed
@@ -40,6 +41,7 @@ jobs:
           files: Work/geo-route_*_aarch64-3.10.ipk
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:

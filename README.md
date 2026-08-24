@@ -26,4 +26,4 @@ opkg install ./geo-route_0.1.2_aarch64-3.10.ipk
 
 Сборка ipk: `package/geo-route/build-ipk.sh` → `Work/geo-route_*_aarch64-3.10.ipk` и `Work/feed/aarch64-3.10/`.
 
-Релиз: тег `v*` (GitHub Actions собирает ipk и выкладывает feed в Pages). В настройках репозитория: Pages → Source = GitHub Actions.
+Релиз: пуш в `main` выкладывает opkg-feed в Pages; тег `v*` собирает ipk в GitHub Release. В настройках репозитория: Pages → Source = GitHub Actions. Окружение `github-pages` разрешает деплой только с `main`, не с тегов.
