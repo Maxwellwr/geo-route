@@ -61,7 +61,7 @@ mkdir -p "$STAGE/opt/share/geo-routing/backend" \
          "$STAGE/opt/share/geo-routing/frontend"
 install -m 755 "$ROOT/scripts/geo/configure.sh" "$STAGE/opt/share/geo-routing/configure.sh"
 lf "$STAGE/opt/share/geo-routing/configure.sh"
-for py in app.py apply.py bindaddr.py collisions.py confio.py run.py tags.py; do
+for py in app.py apply.py bindaddr.py collisions.py confio.py lookup.py run.py tags.py; do
     install -m 644 "$ROOT/scripts/geo-ui/backend/$py" "$STAGE/opt/share/geo-routing/backend/$py"
     lf "$STAGE/opt/share/geo-routing/backend/$py"
 done

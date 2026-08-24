@@ -410,3 +410,121 @@ body {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+.nav-backdrop,
+.mobile-bar {
+  display: none;
+}
+
+.menu-btn {
+  border: 1px solid #cfd6de;
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    background: #fff;
+    padding: 8px 12px;
+    border-bottom: 1px solid #d8dee6;
+    min-height: 52px;
+  }
+
+  .mobile-bar-title {
+    font-weight: 650;
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(16, 24, 40, 0.35);
+  }
+
+  .app.nav-open .nav-backdrop {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    z-index: 30;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.18s ease;
+    border-right: 1px solid #d8dee6;
+  }
+
+  .app.nav-open .sidebar {
+    transform: none;
+  }
+
+  .group-item {
+    min-height: 44px;
+    padding: 10px 8px;
+  }
+
+  .header-view,
+  .header-edit {
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    min-height: 40px;
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .row-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .row-actions .btn,
+  .row-actions .move-select {
+    min-height: 36px;
+  }
+
+  .add-kind {
+    width: 88px;
+    min-height: 40px;
+  }
+
+  .add-input {
+    min-height: 40px;
+  }
+
+  .sections {
+    padding: 10px;
+  }
+
+  .card {
+    flex-basis: 100%;
+  }
+}

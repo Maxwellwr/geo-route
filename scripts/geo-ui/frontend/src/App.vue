@@ -1,5 +1,6 @@
 <template>
-  <div class="app">
+  <div class="app" :class="{ 'nav-open': menuOpen }">
+    <div class="nav-backdrop" @click="menuOpen = false"></div>
     <aside class="sidebar">
       <div class="brand">Geo</div>
       <nav class="group-list">
@@ -49,6 +50,18 @@
     </aside>
 
     <div class="main">
+      <div class="mobile-bar">
+        <button
+          type="button"
+          class="menu-btn"
+          :aria-expanded="menuOpen ? 'true' : 'false'"
+          aria-label="Группы"
+          @click="menuOpen = !menuOpen"
+        >
+          {{ menuOpen ? "×" : "☰" }}
+        </button>
+        <span class="mobile-bar-title">{{ current ? current.title : "Geo" }}</span>
+      </div>
       <header v-if="current" class="header">
         <div v-if="editingHeader" class="header-edit">
           <input
@@ -291,6 +304,7 @@ export default {
     const busy = ref(false);
     const geositeTags = ref([]);
     const geoipTags = ref([]);
+    const menuOpen = ref(false);
     const creating = ref(false);
     const newTitle = ref("");
     const newDesc = ref("");
@@ -467,6 +481,7 @@ export default {
     async function selectGroup(s) {
       slug.value = s;
       editingHeader.value = false;
+      menuOpen.value = false;
       await refreshEntries();
     }
 
@@ -634,6 +649,7 @@ export default {
       logLines,
       busy,
       creating,
+      menuOpen,
       newTitle,
       newDesc,
       editingHeader,

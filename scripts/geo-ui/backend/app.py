@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request, send_from_directory
 
 import apply
+import lookup
 import tags
 from collisions import find_collisions
 from confio import (
@@ -73,7 +74,7 @@ def create_app(geo_dir=None, apply_cmd=None):
     def entries_json(g: Group) -> list[dict]:
         return [entry_json(i, e) for i, e in enumerate(g.entries)]
 
-    def sse_apply():
+    def sse_apply(lookup_domains=None):
         def gen():
             kwargs = {"lock_path": app.config["APPLY_LOCK"]}
             cmd = app.config.get("APPLY_CMD")
@@ -82,6 +83,11 @@ def create_app(geo_dir=None, apply_cmd=None):
             for kind, data in apply.iter_apply(**kwargs):
                 if kind == "done" and isinstance(data, dict) and "exit" in data:
                     app.config["LAST_EXIT"] = data["exit"]
+                    if data["exit"] == 0 and lookup_domains:
+                        for line in lookup.iter_lookup(list(lookup_domains)):
+                            yield "event: log\ndata: %s\n\n" % json.dumps(
+                                line, ensure_ascii=False
+                            )
                 if kind == "log":
                     yield "event: log\ndata: %s\n\n" % json.dumps(
                         data, ensure_ascii=False
@@ -188,7 +194,8 @@ def create_app(geo_dir=None, apply_cmd=None):
             return error
         g.entries.append(entry)
         write_file(g)
-        return sse_apply()
+        domains = [entry.value] if entry.kind == "domain" else None
+        return sse_apply(lookup_domains=domains)
 
     @app.patch("/api/groups/<slug>/entries/<int:eid>")
     def api_patch_entry(slug, eid):
