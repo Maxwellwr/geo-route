@@ -21,7 +21,7 @@ opkg install geo-route
 Локально, без feed:
 
 ```
-opkg install ./geo-route_0.1.1_aarch64-3.10.ipk
+opkg install ./geo-route_0.1.2_aarch64-3.10.ipk
 ```
 
 Сборка ipk: `package/geo-route/build-ipk.sh` → `Work/geo-route_*_aarch64-3.10.ipk` и `Work/feed/aarch64-3.10/`.
