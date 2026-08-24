@@ -15,6 +15,7 @@ def client(geo_dir: Path, monkeypatch: pytest.MonkeyPatch):
         "apply.iter_apply",
         lambda **k: iter([("log", "ok"), ("done", {"exit": 0})]),
     )
+    monkeypatch.setattr("lookup.iter_lookup", lambda domains: [])
     monkeypatch.setenv("GEO_UI_DIST", str(geo_dir / "missing-dist"))
     from app import create_app
 
@@ -265,3 +266,45 @@ def test_collisions_in_groups_list(client):
     hit = next(c for c in data["collisions"] if c["value"] == "dup.com")
     assert ["one", "blocked-sites"] in hit["hits"]
     assert ["two", "only-ru"] in hit["hits"]
+
+
+def test_add_domain_lookup_in_sse(geo_dir: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        "apply.iter_apply",
+        lambda **k: iter([("log", "ok"), ("done", {"exit": 0})]),
+    )
+    monkeypatch.setattr(
+        "lookup.iter_lookup",
+        lambda domains: ["lookup %s → 1.2.3.4" % domains[0]],
+    )
+    monkeypatch.setenv("GEO_UI_DIST", str(geo_dir / "missing-dist"))
+    from app import create_app
+
+    c = create_app(geo_dir=geo_dir).test_client()
+    c.post("/api/groups", json={"title": "Sony"})
+    r = c.post(
+        "/api/groups/sony/entries",
+        json={"set": "blocked-sites", "value": "playstation.com"},
+    )
+    body = r.get_data(as_text=True)
+    assert "lookup playstation.com" in body
+    assert "1.2.3.4" in body
+
+
+def test_add_cidr_skips_lookup(geo_dir: Path, monkeypatch: pytest.MonkeyPatch):
+    seen = []
+    monkeypatch.setattr(
+        "apply.iter_apply",
+        lambda **k: iter([("log", "ok"), ("done", {"exit": 0})]),
+    )
+    monkeypatch.setattr("lookup.iter_lookup", lambda domains: seen.extend(domains) or [])
+    monkeypatch.setenv("GEO_UI_DIST", str(geo_dir / "missing-dist"))
+    from app import create_app
+
+    c = create_app(geo_dir=geo_dir).test_client()
+    c.post("/api/groups", json={"title": "Net"})
+    c.post(
+        "/api/groups/net/entries",
+        json={"set": "blocked-sites", "value": "1.2.3.4"},
+    )
+    assert seen == []
