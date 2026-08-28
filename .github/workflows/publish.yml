@@ -1,0 +1,73 @@
+name: Publish release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate tag
+        id: version
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid tag: $TAG" >&2
+            exit 2
+          fi
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: scripts/geo-ui/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test dnsmasq importer
+        run: python -m unittest discover -s scripts/geo/tests -v
+      - name: Build release ipk
+        env:
+          GEO_ROUTE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          chmod +x package/geo-route/build-ipk.sh
+          npm ci --prefix scripts/geo-ui/frontend
+          ./package/geo-route/build-ipk.sh
+      - name: Upload IPK to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release upload "$TAG" "Work/geo-route_${VERSION}_aarch64-3.10.ipk" --clobber
+      - name: Upload Pages feed
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Work/feed
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

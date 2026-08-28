@@ -4,7 +4,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PKG_DIR="$(cd "$(dirname "$0")" && pwd)"
-VERSION="${GEO_ROUTE_VERSION:-$(sed -n 's/^Version:[[:space:]]*//p' "$PKG_DIR/CONTROL/control")}"
+VERSION="${GEO_ROUTE_VERSION:?GEO_ROUTE_VERSION is required}"
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Invalid GEO_ROUTE_VERSION: $VERSION (expected X.Y.Z)" >&2
+    exit 2
+fi
 ARCH="aarch64-3.10"
 NAME="geo-route"
 STAGE="$ROOT/Work/ipk-stage"
@@ -54,8 +58,10 @@ chmod 755 "$STAGE/opt/bin/geoview"
 echo "== files =="
 install -m 755 "$ROOT/scripts/geo/geo-update.sh" "$STAGE/opt/bin/geo-update"
 install -m 755 "$ROOT/scripts/geo/geo-why.sh" "$STAGE/opt/bin/geo-why"
+install -m 755 "$ROOT/scripts/geo/import_dnsmasq.py" "$STAGE/opt/bin/geo-import-dnsmasq"
 lf "$STAGE/opt/bin/geo-update"
 lf "$STAGE/opt/bin/geo-why"
+lf "$STAGE/opt/bin/geo-import-dnsmasq"
 
 mkdir -p "$STAGE/opt/share/geo-routing/backend" \
          "$STAGE/opt/share/geo-routing/frontend"
@@ -82,8 +88,12 @@ lf "$STAGE/opt/etc/init.d/S05wget-https"
 lf "$STAGE/opt/etc/cron.weekly/geo-update"
 lf "$STAGE/opt/etc/ndm/netfilter.d/10-geo-routing.sh"
 
-cp "$PKG_DIR/CONTROL/control" "$PKG_DIR/CONTROL/conffiles" \
-   "$PKG_DIR/CONTROL/postinst" "$PKG_DIR/CONTROL/prerm" "$CTRL/"
+{
+    head -n 1 "$PKG_DIR/CONTROL/control.in"
+    printf 'Version: %s\n' "$VERSION"
+    tail -n +2 "$PKG_DIR/CONTROL/control.in"
+} > "$CTRL/control"
+cp "$PKG_DIR/CONTROL/conffiles" "$PKG_DIR/CONTROL/postinst" "$PKG_DIR/CONTROL/prerm" "$CTRL/"
 lf "$CTRL/control"; lf "$CTRL/conffiles"; lf "$CTRL/postinst"; lf "$CTRL/prerm"
 chmod 755 "$CTRL/postinst" "$CTRL/prerm"
 
