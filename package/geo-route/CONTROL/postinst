@@ -2,7 +2,7 @@
 
 mkdir -p /opt/var/geo /opt/etc/geo/geo.d
 
-chmod 755 /opt/bin/geo-update /opt/bin/geo-why /opt/bin/geoview \
+chmod 755 /opt/bin/geo-update /opt/bin/geo-why /opt/bin/geo-import-dnsmasq /opt/bin/geoview \
     /opt/share/geo-routing/configure.sh \
     /opt/etc/init.d/S80geo-ui \
     /opt/etc/init.d/S05wget-https \
@@ -10,6 +10,17 @@ chmod 755 /opt/bin/geo-update /opt/bin/geo-why /opt/bin/geoview \
     /opt/etc/ndm/netfilter.d/10-geo-routing.sh 2>/dev/null || true
 
 [ -x /opt/libexec/wget-ssl ] && ln -sf /opt/libexec/wget-ssl /opt/usr/bin/wget
+
+IMPORT_STAMP=/opt/var/geo/.dnsmasq-import-checked
+if [ ! -f "$IMPORT_STAMP" ] && [ -t 0 ] && [ -x /opt/bin/geo-import-dnsmasq ]; then
+    echo
+    echo "geo-route: проверка существующих dnsmasq ipset= правил"
+    if /opt/bin/geo-import-dnsmasq; then
+        touch "$IMPORT_STAMP"
+    else
+        echo "geo-route: импорт dnsmasq завершился с ошибкой; повторите вручную: geo-import-dnsmasq" >&2
+    fi
+fi
 
 /opt/etc/init.d/S80geo-ui start >/dev/null 2>&1 || true
 exit 0
