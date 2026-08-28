@@ -1,5 +1,6 @@
 import importlib.util
 import pathlib
+import sys
 import tempfile
 import unittest
 
@@ -7,6 +8,7 @@ MODULE_PATH = pathlib.Path(__file__).resolve().parents[1] / "import_dnsmasq.py"
 spec = importlib.util.spec_from_file_location("import_dnsmasq", MODULE_PATH)
 mod = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
+sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
 
 
