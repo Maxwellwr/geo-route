@@ -210,22 +210,15 @@ fi
 for df in "$TMP"/*.domains; do
     set_name=$(basename "$df" .domains)
 
-    # гарантируем структуру (configure.sh делает то же при загрузке)
-    if ipset list "$set_name-site" >/dev/null 2>&1 && \
-       ! ipset list "$set_name-site" | grep -q "^Header:.*timeout"; then
-        log "$set_name-site: миграция на timeout $SITE_TIMEOUT"
-        ipset del "$set_name" "$set_name-site" 2>/dev/null
-        ipset destroy "$set_name-site" 2>/dev/null
-    fi
     ipset create "$set_name-site" hash:ip family inet hashsize 4096 maxelem 131072 timeout $SITE_TIMEOUT -exist 2>/dev/null \
-        || warn "$set_name-site: не удалось создать hash:ip (существует с другим типом? нужен configure.sh)"
+        || warn "$set_name-site: не удалось создать hash:ip"
     ipset create "$set_name-ip" hash:net family inet hashsize 8192 maxelem 262144 -exist 2>/dev/null \
         || warn "$set_name-ip: не удалось создать hash:net"
     if ipset create "$set_name" list:set -exist 2>/dev/null; then
         ipset add "$set_name" "$set_name-site" -exist 2>/dev/null
         ipset add "$set_name" "$set_name-ip" -exist 2>/dev/null
     else
-        warn "$set_name: не list:set (старый hash:ip?) — iptables не увидит подсеты, нужен configure.sh"
+        warn "$set_name: не удалось создать list:set"
     fi
 
     cidrs=$TMP/$set_name.cidrs
