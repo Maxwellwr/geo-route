@@ -24,10 +24,7 @@ SETS="only-ru blocked-sites"
 ONLY_RU_SET="only-ru"
 BLOCKED_SET="blocked-sites"
 
-ONLY_RU_MARK="0x1001"
 BLOCKED_MARK="0x1002"
-
-ONLY_RU_TABLE="1001"
 BLOCKED_TABLE="1002"
 
 # ------------------------------------------------------------
@@ -35,21 +32,10 @@ BLOCKED_TABLE="1002"
 # ------------------------------------------------------------
 
 del_rules() {
-    # текущий вариант: сброс маркировки
     $IPTABLES -t mangle -D PREROUTING \
         -m conntrack --ctstate NEW \
         -m set --match-set $ONLY_RU_SET dst \
         -j CONNMARK --set-mark 0 2>/dev/null
-
-    # legacy-вариант: mark 0x1001 + restore
-    $IPTABLES -t mangle -D PREROUTING \
-        -m conntrack --ctstate NEW \
-        -m set --match-set $ONLY_RU_SET dst \
-        -j CONNMARK --set-mark $ONLY_RU_MARK 2>/dev/null
-
-    $IPTABLES -t mangle -D PREROUTING \
-        -m set --match-set $ONLY_RU_SET dst \
-        -j CONNMARK --restore-mark 2>/dev/null
 
     $IPTABLES -t mangle -D PREROUTING \
         -m conntrack --ctstate NEW \
@@ -136,7 +122,6 @@ add_rules() {
 if [ "$1" = "-stop" ]; then
     echo "Removing policy routing rules"
 
-    ip rule del fwmark $ONLY_RU_MARK table $ONLY_RU_TABLE priority $ONLY_RU_TABLE 2>/dev/null
     ip rule del fwmark $BLOCKED_MARK table $BLOCKED_TABLE priority $BLOCKED_TABLE 2>/dev/null
 
     del_rules
@@ -149,23 +134,6 @@ fi
 # ------------------------------------------------------------
 
 for s in $SETS; do
-    # миграция: старый одноимённый сет не list:set -> пересоздать
-    # (записи динамические: dnsmasq/geo-update наполнят заново)
-    if $IPSET list "$s" >/dev/null 2>&1 && \
-       ! $IPSET list "$s" | grep -q "^Type: list:set"; then
-        echo "Migrating $s to list:set"
-        del_rules
-        $IPSET destroy "$s"
-    fi
-
-    # миграция: *-site без timeout → пересоздать (ядро само выкидывает IP)
-    if $IPSET list "$s-site" >/dev/null 2>&1 && \
-       ! $IPSET list "$s-site" | grep -q "^Header:.*timeout"; then
-        echo "Migrating $s-site to timeout $SITE_TIMEOUT"
-        $IPSET del "$s" "$s-site" 2>/dev/null
-        $IPSET destroy "$s-site"
-    fi
-
     $IPSET create "$s-site" hash:ip family inet hashsize 4096 maxelem 131072 timeout $SITE_TIMEOUT -exist
     $IPSET create "$s-ip" hash:net family inet hashsize 8192 maxelem 262144 -exist
     $IPSET create "$s" list:set -exist
@@ -177,22 +145,12 @@ done
 # Configure iptables rules
 # ------------------------------------------------------------
 
-# del_rules перед add_rules: убирает legacy-варианты only-ru (mark 0x1001),
-# иначе guard в add_rules не добавит новое правило
 del_rules
 add_rules
 
 # ------------------------------------------------------------
 # Restore routing rules
 # ------------------------------------------------------------
-
-# Only-RU: policy routing больше не нужен (сброс маркировки) —
-# убираем legacy rule/table, если остались от старой версии
-
-ip rule del fwmark $ONLY_RU_MARK table $ONLY_RU_TABLE priority $ONLY_RU_TABLE 2>/dev/null
-ip route flush table $ONLY_RU_TABLE 2>/dev/null
-
-# Blocked traffic via WireGuard
 
 if ip link show nwg0 >/dev/null 2>&1; then
 
