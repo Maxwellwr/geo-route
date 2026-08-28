@@ -54,8 +54,10 @@ chmod 755 "$STAGE/opt/bin/geoview"
 echo "== files =="
 install -m 755 "$ROOT/scripts/geo/geo-update.sh" "$STAGE/opt/bin/geo-update"
 install -m 755 "$ROOT/scripts/geo/geo-why.sh" "$STAGE/opt/bin/geo-why"
+install -m 755 "$ROOT/scripts/geo/import_dnsmasq.py" "$STAGE/opt/bin/geo-import-dnsmasq"
 lf "$STAGE/opt/bin/geo-update"
 lf "$STAGE/opt/bin/geo-why"
+lf "$STAGE/opt/bin/geo-import-dnsmasq"
 
 mkdir -p "$STAGE/opt/share/geo-routing/backend" \
          "$STAGE/opt/share/geo-routing/frontend"
