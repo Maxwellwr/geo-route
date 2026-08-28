@@ -2,11 +2,13 @@
 
 # Configure ipset based policy routing on Keenetic NDMS
 #
-# only-ru:       сброс connmark в 0 -> прямой путь через main table (WAN).
+# only-ru:       сброс connmark/mark в 0 -> прямой путь через main table (WAN).
 #                Policy routing НЕ используется: маркированный трафик через eth3
 #                ломается об аппаратный NAT (PPE) NDMS.
 #                При коллизии (IP в обоих сетах) выигрывает only-ru.
 # blocked-sites: traffic -> WireGuard nwg0, mark 0x1002, routing table 1002
+#                Правила применяются как к транзитному (PREROUTING), так и к
+#                локально созданному роутером трафику (OUTPUT).
 #
 # Структура сетов:
 #   <name>       list:set  { <name>-site, <name>-ip }  <- его матчит iptables
@@ -57,6 +59,21 @@ del_rules() {
     $IPTABLES -t mangle -D PREROUTING \
         -m set --match-set $BLOCKED_SET dst \
         -j CONNMARK --restore-mark 2>/dev/null
+
+    # router-local traffic
+    $IPTABLES -t mangle -D OUTPUT \
+        -m set --match-set $BLOCKED_SET dst \
+        -j MARK --set-mark $BLOCKED_MARK 2>/dev/null
+
+    $IPTABLES -t mangle -D OUTPUT \
+        -m set --match-set $ONLY_RU_SET dst \
+        -j MARK --set-mark 0 2>/dev/null
+
+    # Локальный пакет получает source address до OUTPUT. После policy reroute
+    # через nwg0 он может сохранить WAN source, поэтому требуется MASQUERADE.
+    $IPTABLES -t nat -D POSTROUTING \
+        -o nwg0 -m mark --mark $BLOCKED_MARK \
+        -j MASQUERADE 2>/dev/null
 }
 
 # Порядок критичен. CONNMARK --set-mark меняет connmark немедленно, а
@@ -85,6 +102,31 @@ add_rules() {
             -m set --match-set $BLOCKED_SET dst \
             -j CONNMARK --restore-mark
     }
+
+    # Router-local traffic never traverses PREROUTING, so mark it in OUTPUT.
+    # only-ru is added after blocked-sites to preserve collision precedence.
+    $IPTABLES -t mangle -C OUTPUT \
+        -m set --match-set $BLOCKED_SET dst \
+        -j MARK --set-mark $BLOCKED_MARK 2>/dev/null || \
+    $IPTABLES -t mangle -A OUTPUT \
+        -m set --match-set $BLOCKED_SET dst \
+        -j MARK --set-mark $BLOCKED_MARK
+
+    $IPTABLES -t mangle -C OUTPUT \
+        -m set --match-set $ONLY_RU_SET dst \
+        -j MARK --set-mark 0 2>/dev/null || \
+    $IPTABLES -t mangle -A OUTPUT \
+        -m set --match-set $ONLY_RU_SET dst \
+        -j MARK --set-mark 0
+
+    # Policy reroute happens after OUTPUT, when a local socket may already have
+    # selected the WAN source address. Rewrite it to the nwg0 address.
+    $IPTABLES -t nat -C POSTROUTING \
+        -o nwg0 -m mark --mark $BLOCKED_MARK \
+        -j MASQUERADE 2>/dev/null || \
+    $IPTABLES -t nat -I POSTROUTING 1 \
+        -o nwg0 -m mark --mark $BLOCKED_MARK \
+        -j MASQUERADE
 }
 
 # ------------------------------------------------------------
