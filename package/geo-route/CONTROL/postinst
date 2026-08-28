@@ -2,21 +2,6 @@
 
 mkdir -p /opt/var/geo /opt/etc/geo/geo.d
 
-STAMP=/opt/var/geo/.migrated-from-opt-root
-OLD=/opt/root/geo
-if [ -d "$OLD" ] && [ ! -f "$STAMP" ]; then
-    [ -f "$OLD/common.conf" ] && cp "$OLD/common.conf" /opt/etc/geo/common.conf
-    if [ -d "$OLD/geo.d" ]; then
-        for f in "$OLD/geo.d"/*.conf; do
-            [ -f "$f" ] && cp "$f" /opt/etc/geo/geo.d/
-        done
-    fi
-    for dat in geosite.dat geoip.dat; do
-        [ -f "$OLD/$dat" ] && cp "$OLD/$dat" /opt/var/geo/
-    done
-    touch "$STAMP"
-fi
-
 chmod 755 /opt/bin/geo-update /opt/bin/geo-why /opt/bin/geoview \
     /opt/share/geo-routing/configure.sh \
     /opt/etc/init.d/S80geo-ui \
