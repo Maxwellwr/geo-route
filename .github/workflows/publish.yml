@@ -30,15 +30,15 @@ jobs:
             exit 2
           fi
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
           cache-dependency-path: scripts/geo-ui/frontend/package-lock.json
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Test dnsmasq importer
@@ -57,7 +57,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: gh release upload "$TAG" "Work/geo-route_${VERSION}_aarch64-3.10.ipk" --clobber
       - name: Upload Pages feed
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: Work/feed
 
@@ -70,4 +70,4 @@ jobs:
     steps:
       - name: Deploy Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
