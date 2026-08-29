@@ -7,14 +7,17 @@ LINE_RE = re.compile(
     r"^\d+:\s+(\S+)\s+inet\s+(\d+\.\d+\.\d+\.\d+)/\d+"
 )
 
+
 def _is_private(ip: str) -> bool:
     a, b = (int(x) for x in ip.split(".")[:2])
     return a == 10 or (a == 192 and b == 168) or (a == 172 and 16 <= b <= 31)
+
 
 def lan_ipv4(addr_text: str, route_text: str = "") -> str:
     wan = set()
     for m in re.finditer(r"\bdev\s+(\S+)", route_text):
         wan.add(m.group(1))
+
     parsed = []
     for line in addr_text.splitlines():
         m = LINE_RE.search(line)
@@ -25,12 +28,26 @@ def lan_ipv4(addr_text: str, route_text: str = "") -> str:
         parsed.append((iface_base, ip))
         if iface_base == "br0":
             return ip
+
     for iface, ip in parsed:
         if iface in ("lo", "nwg0") or iface in wan:
             continue
         if _is_private(ip):
             return ip
+
     raise RuntimeError("no LAN IPv4 (br0 / private) found")
+
+
+def iface_ipv4(addr_text: str, iface: str) -> str:
+    for line in addr_text.splitlines():
+        m = LINE_RE.search(line)
+        if not m:
+            continue
+        iface_base = m.group(1).split("@")[0]
+        if iface_base == iface:
+            return m.group(2)
+    raise RuntimeError(f"no IPv4 on {iface}")
+
 
 def detect_lan_ipv4() -> str:
     addr = subprocess.check_output(["ip", "-4", "-o", "addr", "show"], text=True)
@@ -39,3 +56,15 @@ def detect_lan_ipv4() -> str:
     except subprocess.CalledProcessError:
         route = ""
     return lan_ipv4(addr, route)
+
+
+def detect_iface_ipv4(iface: str) -> str:
+    try:
+        addr = subprocess.check_output(
+            ["ip", "-4", "-o", "addr", "show", "dev", iface],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(f"no IPv4 on {iface}") from exc
+    return iface_ipv4(addr, iface)
