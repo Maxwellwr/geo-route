@@ -29,6 +29,13 @@ opkg install ./geo-route_0.1.2_aarch64-3.10.ipk
 Релиз: пуш в `main` выкладывает opkg-feed в Pages; тег `v*` собирает ipk в GitHub Release. В настройках репозитория: Pages → Source = GitHub Actions. Окружение `github-pages` разрешает деплой только с `main`, не с тегов.
 
 
+## Troubleshooting
+
+Полный практический разбор проблем, которые уже встречались на Keenetic/Entware: `ipset`, policy routing, DNS через WireGuard, NDM hooks, SSH после reboot, Geo UI, DNAT, `opkg`/`wget`, `libpcre2`, старые установки и release/CI:
+
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+
 ## Если `opkg update` падает с `libpcre2`
 
 После частичного обновления Entware `wget-ssl` может оказаться новее установленной `libpcre2`. Типичный симптом:
