@@ -38,17 +38,6 @@ def lan_ipv4(addr_text: str, route_text: str = "") -> str:
     raise RuntimeError("no LAN IPv4 (br0 / private) found")
 
 
-def iface_ipv4(addr_text: str, iface: str) -> str:
-    for line in addr_text.splitlines():
-        m = LINE_RE.search(line)
-        if not m:
-            continue
-        iface_base = m.group(1).split("@")[0]
-        if iface_base == iface:
-            return m.group(2)
-    raise RuntimeError(f"no IPv4 on {iface}")
-
-
 def detect_lan_ipv4() -> str:
     addr = subprocess.check_output(["ip", "-4", "-o", "addr", "show"], text=True)
     try:
@@ -56,15 +45,3 @@ def detect_lan_ipv4() -> str:
     except subprocess.CalledProcessError:
         route = ""
     return lan_ipv4(addr, route)
-
-
-def detect_iface_ipv4(iface: str) -> str:
-    try:
-        addr = subprocess.check_output(
-            ["ip", "-4", "-o", "addr", "show", "dev", iface],
-            text=True,
-            stderr=subprocess.DEVNULL,
-        )
-    except subprocess.CalledProcessError as exc:
-        raise RuntimeError(f"no IPv4 on {iface}") from exc
-    return iface_ipv4(addr, iface)
