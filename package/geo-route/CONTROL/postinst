@@ -2,6 +2,14 @@
 
 mkdir -p /opt/var/geo /opt/etc/geo/geo.d
 
+# Older builds could leave an empty vendor/colorama directory behind.
+# Python then treats it as a namespace package; Werkzeug sees "colorama"
+# as importable and crashes because AnsiToWin32 is missing.
+COLORAMA_DIR=/opt/share/geo-routing/backend/vendor/colorama
+if [ -d "$COLORAMA_DIR" ] && [ ! -f "$COLORAMA_DIR/__init__.py" ]; then
+    rm -rf "$COLORAMA_DIR"
+fi
+
 chmod 755 /opt/bin/geo-update /opt/bin/geo-why /opt/bin/geo-import-dnsmasq /opt/bin/geoview \
     /opt/share/geo-routing/configure.sh \
     /opt/etc/init.d/S80geo-ui \
