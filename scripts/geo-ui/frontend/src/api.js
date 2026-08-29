@@ -58,8 +58,13 @@ export function deleteEntry(slug, id) {
   );
 }
 
-export async function getTags(type) {
-  const data = await getJson("/api/tags?type=" + encodeURIComponent(type));
+export async function getTags(type, query, limit = 30) {
+  const params = new URLSearchParams({
+    type,
+    q: query || "",
+    limit: String(limit),
+  });
+  const data = await getJson("/api/tags?" + params.toString());
   return data.tags || [];
 }
 

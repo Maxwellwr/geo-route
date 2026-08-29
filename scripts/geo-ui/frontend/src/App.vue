@@ -170,23 +170,23 @@
                   class="add-kind"
                   :value="draftKinds[setName]"
                   :disabled="busy || !current"
-                  @change="draftKinds[setName] = $event.target.value"
+                  @change="onDraftKindChange(setName, $event.target.value)"
                 >
                   <option v-for="k in ADD_KINDS" :key="k.id" :value="k.id">{{ k.label }}</option>
                 </select>
                 <input
-                  :list="'suggest-' + setName"
+                  :list="tagListId(setName)"
                   :value="drafts[setName]"
                   type="text"
                   class="add-input"
                   :placeholder="addPlaceholder(draftKinds[setName])"
                   :disabled="busy || !current"
-                  @input="drafts[setName] = $event.target.value"
+                  @input="onDraftInput(setName, $event.target.value)"
                   @keydown.enter.prevent="onAdd(setName)"
                 />
               </div>
               <datalist :id="'suggest-' + setName">
-                <option v-for="s in suggestions(setName)" :key="s" :value="s" />
+                <option v-for="s in tagSuggestions[setName]" :key="s" :value="s" />
               </datalist>
               <span
                 v-if="composeDraft(setName) && collisionFor(composeDraft(setName))"
@@ -302,8 +302,6 @@ export default {
     const collisions = ref([]);
     const logLines = ref([]);
     const busy = ref(false);
-    const geositeTags = ref([]);
-    const geoipTags = ref([]);
     const menuOpen = ref(false);
     const creating = ref(false);
     const newTitle = ref("");
@@ -313,6 +311,9 @@ export default {
     const headerDesc = ref("");
     const drafts = reactive(Object.fromEntries(SETS.map((s) => [s, ""])));
     const draftKinds = reactive(Object.fromEntries(SETS.map((s) => [s, "domain"])));
+    const tagSuggestions = reactive(Object.fromEntries(SETS.map((s) => [s, []])));
+    const suggestTimers = Object.create(null);
+    const suggestSeq = Object.fromEntries(SETS.map((s) => [s, 0]));
     const logEl = ref(null);
     const LOG_H_MIN = 72;
     const LOG_H_DEFAULT = 120;
@@ -433,15 +434,55 @@ export default {
       return raw;
     }
 
-    function suggestions(setName) {
+    function tagListId(setName) {
       const kind = draftKinds[setName];
-      if (kind !== "geosite" && kind !== "geoip") return [];
-      const q = stripKindPrefix(drafts[setName], kind).toLowerCase();
-      const pool = kind === "geosite" ? geositeTags.value : geoipTags.value;
-      return pool
-        .filter((t) => !q || t.includes(q))
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, 40);
+      return kind === "geosite" || kind === "geoip" ? "suggest-" + setName : undefined;
+    }
+
+    function clearTagSuggestions(setName) {
+      if (suggestTimers[setName]) {
+        clearTimeout(suggestTimers[setName]);
+        suggestTimers[setName] = undefined;
+      }
+      suggestSeq[setName] += 1;
+      tagSuggestions[setName] = [];
+    }
+
+    function queueTagSuggestions(setName) {
+      clearTagSuggestions(setName);
+
+      const kind = draftKinds[setName];
+      if (kind !== "geosite" && kind !== "geoip") return;
+
+      const query = stripKindPrefix(drafts[setName], kind).toLowerCase();
+      if (query.length < 2) return;
+
+      const seq = suggestSeq[setName];
+      suggestTimers[setName] = setTimeout(async () => {
+        suggestTimers[setName] = undefined;
+        try {
+          const result = await getTags(kind, query, 30);
+          if (
+            suggestSeq[setName] === seq &&
+            draftKinds[setName] === kind &&
+            stripKindPrefix(drafts[setName], kind).toLowerCase() === query
+          ) {
+            tagSuggestions[setName] = result;
+          }
+        } catch {
+          if (suggestSeq[setName] === seq) tagSuggestions[setName] = [];
+        }
+      }, 250);
+    }
+
+    function onDraftInput(setName, value) {
+      drafts[setName] = value;
+      queueTagSuggestions(setName);
+    }
+
+    function onDraftKindChange(setName, kind) {
+      draftKinds[setName] = kind;
+      queueTagSuggestions(setName);
     }
 
     async function scrollLog() {
@@ -561,7 +602,10 @@ export default {
       if (!value || !slug.value || busy.value) return;
       try {
         const code = await runMutation(addEntry(slug.value, { set: setName, value }));
-        if (code !== undefined) drafts[setName] = "";
+        if (code !== undefined) {
+          drafts[setName] = "";
+          clearTagSuggestions(setName);
+        }
       } catch {
         /* keep draft */
       }
@@ -627,16 +671,6 @@ export default {
       } catch (err) {
         pushLog("error: " + (err && err.message ? err.message : String(err)));
       }
-      try {
-        geositeTags.value = (await getTags("geosite")).slice().sort((a, b) => a.localeCompare(b));
-      } catch {
-        geositeTags.value = [];
-      }
-      try {
-        geoipTags.value = (await getTags("geoip")).slice().sort((a, b) => a.localeCompare(b));
-      } catch {
-        geoipTags.value = [];
-      }
     });
 
     return {
@@ -657,6 +691,7 @@ export default {
       headerDesc,
       drafts,
       draftKinds,
+      tagSuggestions,
       logEl,
       logHeight,
       logMode,
@@ -673,7 +708,9 @@ export default {
       otherGroups,
       addPlaceholder,
       composeDraft,
-      suggestions,
+      tagListId,
+      onDraftInput,
+      onDraftKindChange,
       selectGroup,
       onCreateGroup,
       onSaveHeader,

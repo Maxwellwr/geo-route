@@ -39,3 +39,20 @@ def list_tags(
     if proc.returncode != 0:
         return []
     return parse_tag_list(proc.stdout)
+
+
+def search_tags(items: list[str], query: str, limit: int = 30) -> list[str]:
+    q = (query or "").strip().lower()
+    if len(q) < 2 or limit <= 0:
+        return []
+
+    prefix = []
+    contains = []
+    for tag in items:
+        value = tag.lower()
+        if value.startswith(q):
+            prefix.append(tag)
+        elif q in value:
+            contains.append(tag)
+
+    return (prefix + contains)[:limit]
