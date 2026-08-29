@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tags import LIST_ARGS, list_tags, parse_tag_list
+from tags import LIST_ARGS, list_tags, parse_tag_list, search_tags
 
 TAG_FIXTURE = """\
 # geosite tags
@@ -66,3 +66,18 @@ def test_list_tags_geoview_success(tmp_path: Path):
 
 def test_list_args_is_extract():
     assert LIST_ARGS == ["-action", "extract"]
+
+
+def test_search_tags_prioritizes_prefix_matches():
+    items = ["my-youtube-helper", "youtube", "youtube-music", "z-youtube"]
+    assert search_tags(items, "you", 3) == [
+        "youtube",
+        "youtube-music",
+        "my-youtube-helper",
+    ]
+
+
+def test_search_tags_requires_two_characters_and_respects_limit():
+    items = ["google", "google-cn", "google-play", "my-google"]
+    assert search_tags(items, "g", 30) == []
+    assert search_tags(items, "GO", 2) == ["google", "google-cn"]

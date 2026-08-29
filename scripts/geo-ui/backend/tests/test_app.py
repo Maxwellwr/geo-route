@@ -190,10 +190,24 @@ def test_status_last_exit_after_apply(client):
 
 
 def test_tags_type_query(client, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr("tags.list_tags", lambda kind, dat, **k: ["youtube", "google"])
-    r = client.get("/api/tags?type=geosite")
+    monkeypatch.setattr(
+        "tags.list_tags",
+        lambda kind, dat, **k: ["my-youtube-helper", "youtube", "youtube-music", "google"],
+    )
+
+    short = client.get("/api/tags?type=geosite&q=y")
+    assert short.status_code == 200
+    assert short.get_json() == {"tags": []}
+
+    r = client.get("/api/tags?type=geosite&q=you&limit=2")
     assert r.status_code == 200
-    assert r.get_json() == {"tags": ["youtube", "google"]}
+    assert r.get_json() == {"tags": ["youtube", "youtube-music"]}
+
+    prefixed = client.get("/api/tags?type=geosite&q=geosite%3Ayou&limit=3")
+    assert prefixed.get_json() == {
+        "tags": ["youtube", "youtube-music", "my-youtube-helper"]
+    }
+
     bad = client.get("/api/tags")
     assert bad.status_code == 400
     assert "error" in bad.get_json()

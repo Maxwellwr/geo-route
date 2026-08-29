@@ -239,11 +239,26 @@ def create_app(geo_dir=None, apply_cmd=None):
         kind = request.args.get("type")
         if kind not in ("geosite", "geoip"):
             return err("type must be geosite or geoip", 400)
+        query = (request.args.get("q") or "").strip().lower()
+        prefix = kind + ":"
+        if query.startswith(prefix):
+            query = query[len(prefix):].strip()
+
+        try:
+            limit = int(request.args.get("limit", "30"))
+        except ValueError:
+            return err("limit must be integer", 400)
+        limit = max(1, min(limit, 100))
+
+        if len(query) < 2:
+            return jsonify(tags=[])
+
         cache = app.config["TAG_CACHE"]
         if kind not in cache:
             dat = geo_var / ("%s.dat" % kind)
-            cache[kind] = tags.list_tags(kind, dat)
-        return jsonify(tags=cache[kind])
+            cache[kind] = sorted(set(tags.list_tags(kind, dat)))
+
+        return jsonify(tags=tags.search_tags(cache[kind], query, limit))
 
     @app.get("/api/status")
     def api_status():
